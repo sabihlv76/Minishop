@@ -431,7 +431,8 @@ img {
   transform: scale(1);
 }
 
-.hero-slide-image,
+.hero-slide-media,
+.promo-media,
 .promo-card img {
   width: 100%;
   height: 100%;

@@ -3,10 +3,16 @@ import { ArrowRight, ChevronLeft, ChevronRight, Eye, Heart, ShoppingBag } from '
 import { Link } from 'react-router-dom';
 import { applyProductImageFallback } from '../lib/productImageFallbacks';
 
+const localImageOne = '/WhatsApp%20Image%202026-06-24%20at%2008.22.12.jpeg';
+const localImageTwo = '/WhatsApp%20Image%202026-06-24%20at%2008.22.13.jpeg';
+const localVideoOne = '/VID-20260623-WA0014.mp4';
+const localVideoTwo = '/VID-20260623-WA0018.mp4';
+
 const heroSlides = [
   {
-    image:
-      'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1600&q=90',
+    mediaType: 'video',
+    video: localVideoOne,
+    poster: localImageOne,
     title: 'Everyday shopping made lighter, clearer and faster',
     eyebrow: 'Mini supermarket',
     description:
@@ -15,8 +21,8 @@ const heroSlides = [
     cta: 'Browse all items',
   },
   {
-    image:
-      'https://images.unsplash.com/photo-1604719312566-8912e9c8a213?auto=format&fit=crop&w=1600&q=90',
+    mediaType: 'image',
+    image: localImageOne,
     title: 'Cold drinks and celebration bottles ready for pick-up',
     eyebrow: 'Beverage shelf',
     description:
@@ -25,8 +31,8 @@ const heroSlides = [
     cta: 'Shop drinks',
   },
   {
-    image:
-      'https://images.unsplash.com/photo-1583258292688-d0213dc5a3a8?auto=format&fit=crop&w=1600&q=90',
+    mediaType: 'image',
+    image: localImageTwo,
     title: 'Baby care and milk staples kept simple to find',
     eyebrow: 'Family stock',
     description:
@@ -35,8 +41,9 @@ const heroSlides = [
     cta: 'View baby shelf',
   },
   {
-    image:
-      'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?auto=format&fit=crop&w=1600&q=90',
+    mediaType: 'video',
+    video: localVideoTwo,
+    poster: localImageTwo,
     title: 'Kitchen essentials with a cleaner white and sky-blue feel',
     eyebrow: 'Daily cooking',
     description:
@@ -113,7 +120,19 @@ const Home = ({
               key={slide.title}
               className={`hero-slide ${index === currentSlide ? 'active' : ''}`}
             >
-              <img src={slide.image} alt={slide.title} className="hero-slide-image" />
+              {slide.mediaType === 'video' ? (
+                <video
+                  className="hero-slide-media"
+                  src={slide.video}
+                  poster={slide.poster}
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                />
+              ) : (
+                <img src={slide.image} alt={slide.title} className="hero-slide-media" />
+              )}
               <div className="hero-slide-overlay" />
               <div className="hero-slide-content">
                 <span className="eyebrow">{slide.eyebrow}</span>
@@ -190,9 +209,14 @@ const Home = ({
 
       <section className="container promo-strip">
         <article className="promo-card">
-          <img
-            src="https://images.unsplash.com/photo-1579113800032-c38bd7635818?auto=format&fit=crop&w=1200&q=80"
-            alt="Mini supermarket shelves"
+          <video
+            className="promo-media"
+            src={localVideoOne}
+            poster={localImageOne}
+            autoPlay
+            muted
+            loop
+            playsInline
           />
           <div className="promo-copy">
             <span className="eyebrow">Fresh business direction</span>
@@ -201,8 +225,9 @@ const Home = ({
         </article>
         <article className="promo-card">
           <img
-            src="https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=1200&q=80"
+            src={localImageTwo}
             alt="Baby and household essentials"
+            className="promo-media"
           />
           <div className="promo-copy">
             <span className="eyebrow">Always reachable</span>
