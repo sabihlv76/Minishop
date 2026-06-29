@@ -1,6 +1,20 @@
 import { useState } from 'react';
 import { CheckCircle2, MessageCircle, PhoneCall, Send, X } from 'lucide-react';
 
+function normalizeWhatsAppPhone(phone) {
+  const digits = String(phone || '').replace(/\D/g, '');
+
+  if (digits.startsWith('250')) {
+    return digits;
+  }
+
+  if (digits.startsWith('0')) {
+    return `250${digits.slice(1)}`;
+  }
+
+  return digits;
+}
+
 const WhatsAppWidget = ({ phone, products, storeName, location }) => {
   const quickMessages = [
     'Is this item available today?',
@@ -22,7 +36,7 @@ const WhatsAppWidget = ({ phone, products, storeName, location }) => {
       .filter(Boolean)
       .join('\n');
 
-    window.open(`https://wa.me/${phone.replace(/[^\d]/g, '')}?text=${encodeURIComponent(composedMessage)}`, '_blank');
+    window.open(`https://wa.me/${normalizeWhatsAppPhone(phone)}?text=${encodeURIComponent(composedMessage)}`, '_blank');
   };
 
   return (

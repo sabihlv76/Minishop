@@ -5,6 +5,20 @@ function formatRwf(price) {
   return `${Number(price).toLocaleString()} RWF`;
 }
 
+function normalizeWhatsAppPhone(phone) {
+  const digits = String(phone || '').replace(/\D/g, '');
+
+  if (digits.startsWith('250')) {
+    return digits;
+  }
+
+  if (digits.startsWith('0')) {
+    return `250${digits.slice(1)}`;
+  }
+
+  return digits;
+}
+
 const CartDrawer = ({ cart, isOpen, onClose, onRemoveItem, onUpdateQty, phone }) => {
   const [name, setName] = useState('');
   const [location, setLocation] = useState('');
@@ -30,7 +44,7 @@ const CartDrawer = ({ cart, isOpen, onClose, onRemoveItem, onUpdateQty, phone })
       total
     )}`;
 
-    window.open(`https://wa.me/${phone.replace(/[^\d]/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
+    window.open(`https://wa.me/${normalizeWhatsAppPhone(phone)}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   return (

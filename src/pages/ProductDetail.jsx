@@ -3,6 +3,20 @@ import { ArrowLeft, MessageSquare, ShoppingBag } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { applyProductImageFallback } from '../lib/productImageFallbacks';
 
+function normalizeWhatsAppPhone(phone) {
+  const digits = String(phone || '').replace(/\D/g, '');
+
+  if (digits.startsWith('250')) {
+    return digits;
+  }
+
+  if (digits.startsWith('0')) {
+    return `250${digits.slice(1)}`;
+  }
+
+  return digits;
+}
+
 function formatRwf(price) {
   return `${Number(price).toLocaleString()} RWF`;
 }
@@ -33,7 +47,7 @@ const ProductDetail = ({ products, onAddToCart, phone, storeName }) => {
     const message = `Hello ${storeName}, I would like to order ${product.name} for ${formatRwf(
       product.price
     )}.`;
-    window.open(`https://wa.me/${phone.replace(/[^\d]/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
+    window.open(`https://wa.me/${normalizeWhatsAppPhone(phone)}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   return (
