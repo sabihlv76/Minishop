@@ -31,7 +31,6 @@ import {
   ADMIN_AUTH_KEY,
   ADMIN_SETTINGS_KEY,
   CART_KEY,
-  PRODUCTS_KEY,
   USER_KEY,
   WISHLIST_KEY,
   defaultAdminSettings,
@@ -100,9 +99,7 @@ function AppContent() {
   const isAdminPage = location.pathname === '/e1t-secure-panel';
   const showStoreChrome = !isAuthPage && !isAdminPage;
 
-  const [products, setProducts] = useState(() =>
-    readStorage(PRODUCTS_KEY, defaultProducts)
-  );
+  const [products, setProducts] = useState(defaultProducts);
   const [cart, setCart] = useState(() => readStorage(CART_KEY, []));
   const [wishlist, setWishlist] = useState(() => readStorage(WISHLIST_KEY, []));
   const [user, setUser] = useState(() => readStorage(USER_KEY, null));
@@ -126,7 +123,7 @@ function AppContent() {
           return;
         }
 
-        if (Array.isArray(data.products) && data.products.length > 0) {
+        if (Array.isArray(data.products)) {
           setProducts(data.products);
         }
 
@@ -139,7 +136,10 @@ function AppContent() {
 
         setRemoteStoreEnabled(true);
       } catch (error) {
-        console.warn('Using local store data because the Mongo API is unavailable.', error);
+        console.warn(
+          'MongoDB Atlas is unavailable, so product changes will not persist until MONGODB_URI is configured.',
+          error
+        );
       } finally {
         if (isMounted) {
           setRemoteStoreReady(true);
@@ -153,10 +153,6 @@ function AppContent() {
       isMounted = false;
     };
   }, []);
-
-  useEffect(() => {
-    writeStorage(PRODUCTS_KEY, products);
-  }, [products]);
 
   useEffect(() => {
     writeStorage(CART_KEY, cart);
@@ -173,20 +169,6 @@ function AppContent() {
   useEffect(() => {
     writeStorage(ADMIN_SETTINGS_KEY, adminSettings);
   }, [adminSettings]);
-
-  useEffect(() => {
-    if (!remoteStoreReady || !remoteStoreEnabled) {
-      return undefined;
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      saveStoreData({ products, adminSettings }).catch((error) => {
-        console.warn('Could not sync data to Mongo Atlas.', error);
-      });
-    }, 300);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [adminSettings, products, remoteStoreEnabled, remoteStoreReady]);
 
   useEffect(() => {
     let previousY = window.scrollY;
@@ -320,32 +302,55 @@ function AppContent() {
     }));
   };
 
-  const handleAdminSettingsSave = (nextSettings) => {
-    setAdminSettings(nextSettings);
-  };
+  const saveCatalogToRemote = async (nextProducts, nextAdminSettings) => {
+    if (!remoteStoreEnabled) {
+      throw new Error(
+        'MongoDB Atlas is not configured. Add MONGODB_URI to store uploaded products in the database.'
+      );
+    }
 
-  const handleSaveProduct = (productPayload, editingId) => {
-    setProducts((currentProducts) => {
-      if (editingId) {
-        return currentProducts.map((product) =>
-          product.id === editingId ? { ...product, ...productPayload } : product
-        );
-      }
-
-      return [
-        {
-          id: buildProductId(productPayload.name),
-          ...productPayload,
-        },
-        ...currentProducts,
-      ];
+    const data = await saveStoreData({
+      products: nextProducts,
+      adminSettings: nextAdminSettings,
     });
+
+    if (Array.isArray(data.products)) {
+      setProducts(data.products);
+    }
+
+    if (data.adminSettings) {
+      setAdminSettings((current) => ({
+        ...current,
+        ...data.adminSettings,
+      }));
+    }
+
+    return data;
   };
 
-  const handleDeleteProduct = (productId) => {
-    setProducts((currentProducts) =>
-      currentProducts.filter((product) => product.id !== productId)
-    );
+  const handleAdminSettingsSave = async (nextSettings) => {
+    await saveCatalogToRemote(products, nextSettings);
+  };
+
+  const handleSaveProduct = async (productPayload, editingId) => {
+    const nextProducts = editingId
+      ? products.map((product) =>
+          product.id === editingId ? { ...product, ...productPayload } : product
+        )
+      : [
+          {
+            id: buildProductId(productPayload.name),
+            ...productPayload,
+          },
+          ...products,
+        ];
+
+    await saveCatalogToRemote(nextProducts, adminSettings);
+  };
+
+  const handleDeleteProduct = async (productId) => {
+    const nextProducts = products.filter((product) => product.id !== productId);
+    await saveCatalogToRemote(nextProducts, adminSettings);
     setWishlist((currentWishlist) =>
       currentWishlist.filter((id) => id !== productId)
     );
@@ -354,13 +359,13 @@ function AppContent() {
     );
   };
 
-  const handleResetCatalog = () => {
-    setProducts(defaultProducts);
+  const handleResetCatalog = async () => {
+    await saveCatalogToRemote(defaultProducts, adminSettings);
   };
 
   const handleRefreshProducts = async () => {
     if (!remoteStoreEnabled) {
-      setProducts(readStorage(PRODUCTS_KEY, defaultProducts));
+      setProducts(defaultProducts);
       return;
     }
 

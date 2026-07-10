@@ -6,7 +6,7 @@ let cachedClient;
 
 export async function getMongoDatabase() {
   const uri = process.env.MONGODB_URI;
-  const dbName = process.env.MONGODB_DB_NAME || 'chez_mama_munyana';
+  const dbName = process.env.MONGODB_DB_NAME || 'chezm-munyana';
 
   if (!uri) {
     throw new Error('Missing MONGODB_URI environment variable.');

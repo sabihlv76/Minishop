@@ -57,6 +57,7 @@ const Admin = ({
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(initialForm);
   const [statusMessage, setStatusMessage] = useState('');
+  const [statusTone, setStatusTone] = useState('success');
   const [settingsForm, setSettingsForm] = useState(adminSettings);
 
   const filteredProducts = useMemo(() => {
@@ -70,7 +71,8 @@ const Admin = ({
     });
   }, [products, searchQuery]);
 
-  const showStatus = (message) => {
+  const showStatus = (message, tone = 'success') => {
+    setStatusTone(tone);
     setStatusMessage(message);
     window.setTimeout(() => setStatusMessage(''), 2800);
   };
@@ -145,37 +147,45 @@ const Admin = ({
     setForm((current) => ({ ...current, extraImages }));
   };
 
-  const handleSaveProduct = (event) => {
+  const handleSaveProduct = async (event) => {
     event.preventDefault();
-    onSaveProduct(
-      {
-        badge: form.badge.trim(),
-        benefits: form.benefits
-          .split('\n')
-          .map((item) => item.trim())
-          .filter(Boolean),
-        category: form.category,
-        description: form.description.trim(),
-        extraImages: form.extraImages,
-        image: form.image,
-        ingredients: form.ingredients.trim(),
-        instructions: form.instructions.trim(),
-        name: form.name.trim(),
-        price: Number(form.price),
-        size: form.size.trim(),
-      },
-      editingId
-    );
+    try {
+      await onSaveProduct(
+        {
+          badge: form.badge.trim(),
+          benefits: form.benefits
+            .split('\n')
+            .map((item) => item.trim())
+            .filter(Boolean),
+          category: form.category,
+          description: form.description.trim(),
+          extraImages: form.extraImages,
+          image: form.image,
+          ingredients: form.ingredients.trim(),
+          instructions: form.instructions.trim(),
+          name: form.name.trim(),
+          price: Number(form.price),
+          size: form.size.trim(),
+        },
+        editingId
+      );
 
-    setIsModalOpen(false);
-    setForm(initialForm);
-    showStatus(editingId ? 'Product updated successfully.' : 'Product created successfully.');
+      setIsModalOpen(false);
+      setForm(initialForm);
+      showStatus(editingId ? 'Product saved to MongoDB Atlas.' : 'Product uploaded to MongoDB Atlas.');
+    } catch (error) {
+      showStatus(error.message || 'Could not save product to MongoDB Atlas.', 'error');
+    }
   };
 
-  const handleSaveSettings = (event) => {
+  const handleSaveSettings = async (event) => {
     event.preventDefault();
-    onSaveAdminSettings(settingsForm);
-    showStatus('Business settings updated.');
+    try {
+      await onSaveAdminSettings(settingsForm);
+      showStatus('Business settings saved to MongoDB Atlas.');
+    } catch (error) {
+      showStatus(error.message || 'Could not save business settings.', 'error');
+    }
   };
 
   const totalValue = filteredProducts.reduce((sum, product) => sum + Number(product.price || 0), 0);
@@ -252,7 +262,7 @@ const Admin = ({
         </div>
       </section>
 
-      {statusMessage && <div className="status-banner success">{statusMessage}</div>}
+      {statusMessage && <div className={`status-banner ${statusTone}`}>{statusMessage}</div>}
 
       <section className="admin-metrics">
         <article className="metric-card">
@@ -286,7 +296,18 @@ const Admin = ({
               <button type="button" className="btn-outline" onClick={onRefreshProducts}>
                 Refresh
               </button>
-              <button type="button" className="btn-outline" onClick={onResetCatalog}>
+              <button
+                type="button"
+                className="btn-outline"
+                onClick={async () => {
+                  try {
+                    await onResetCatalog();
+                    showStatus('Default catalog restored in MongoDB Atlas.');
+                  } catch (error) {
+                    showStatus(error.message || 'Could not reset catalog.', 'error');
+                  }
+                }}
+              >
                 Reset catalog
               </button>
             </div>
@@ -310,9 +331,13 @@ const Admin = ({
                   <button
                     type="button"
                     className="btn-icon btn-icon-primary danger"
-                    onClick={() => {
-                      onDeleteProduct(product.id);
-                      showStatus('Product deleted.');
+                    onClick={async () => {
+                      try {
+                        await onDeleteProduct(product.id);
+                        showStatus('Product deleted from MongoDB Atlas.');
+                      } catch (error) {
+                        showStatus(error.message || 'Could not delete product.', 'error');
+                      }
                     }}
                   >
                     <Trash2 size={16} />

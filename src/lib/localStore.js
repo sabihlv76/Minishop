@@ -1,4 +1,3 @@
-export const PRODUCTS_KEY = 'cmm_products';
 export const CART_KEY = 'cmm_cart';
 export const WISHLIST_KEY = 'cmm_wishlist';
 export const USER_KEY = 'cmm_user';
